@@ -2,7 +2,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody2D), typeof(SpriteRenderer))]
+[RequireComponent(typeof(Rigidbody2D), typeof(SpriteRenderer), typeof(Animator))]
 public class PlayerControls : MonoBehaviour
 {
     [Header("Controls")]
@@ -11,15 +11,30 @@ public class PlayerControls : MonoBehaviour
     
     [Header("Checks")]
     public Transform groundCheck;
+
+    private int jumpsLeft = 2;
     
+    private Animator myAnimator;
     private Rigidbody2D myRigidbody;
     private SpriteRenderer spriteRenderer;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        myAnimator = GetComponent<Animator>();
         myRigidbody = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void FixedUpdate()
+    {
+        // Convert the velocity to a + number
+        float velocityX = Mathf.Abs(myRigidbody.linearVelocityX);
+        myAnimator.SetFloat("Velocity X", velocityX);
+        myAnimator.SetFloat("Velocity Y", myRigidbody.linearVelocityY);
+        
+        myAnimator.SetBool("Grounded", IsGrounded());
+        myAnimator.SetInteger("Jumps Left", jumpsLeft);
     }
 
     private void OnMove(InputValue value)
@@ -39,10 +54,16 @@ public class PlayerControls : MonoBehaviour
 
     private void OnJump(InputValue value)
     {
+        if (IsGrounded())
+        {
+            jumpsLeft = 2;
+        }
+        
         // Only jump when the key is pressed
-        if (value.isPressed && IsGrounded())
+        if (value.isPressed && (IsGrounded() || jumpsLeft > 0))
         {
             myRigidbody.linearVelocityY = jumpForce;
+            jumpsLeft--;
         }
     }
     
