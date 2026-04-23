@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,8 +11,15 @@ public class PlayerControls : MonoBehaviour
     [Header("Checks")]
     public Transform groundCheck;
 
-    private int jumpsLeft = 2;
+    [Header("References")]
+    public ParticleSystem sandParticles;
     
+    [Header("Sounds")]
+    public AudioClip[] jumpSound;
+    
+    private int jumpsLeft = 2;
+
+    private AudioSource myAudioSource;
     private Animator myAnimator;
     private Rigidbody2D myRigidbody;
     private SpriteRenderer spriteRenderer;
@@ -21,6 +27,7 @@ public class PlayerControls : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        myAudioSource = GetComponent<AudioSource>();
         myAnimator = GetComponent<Animator>();
         myRigidbody = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -35,6 +42,21 @@ public class PlayerControls : MonoBehaviour
         
         myAnimator.SetBool("Grounded", IsGrounded());
         myAnimator.SetInteger("Jumps Left", jumpsLeft);
+        
+        // If grounded & particles are stopped
+        // start particles
+        // If not grounded & particles playing
+        // stop particles
+
+        if (IsGrounded() && !sandParticles.isPlaying)
+        {
+            sandParticles.Play();
+        }
+        
+        if (!IsGrounded() && sandParticles.isPlaying)
+        {
+            sandParticles.Stop();
+        }
     }
 
     private void OnMove(InputValue value)
@@ -60,10 +82,14 @@ public class PlayerControls : MonoBehaviour
         }
         
         // Only jump when the key is pressed
-        if (value.isPressed && (IsGrounded() || jumpsLeft > 0))
+        if (value.isPressed && jumpsLeft > 0)
         {
             myRigidbody.linearVelocityY = jumpForce;
             jumpsLeft--;
+            
+            // Find a random index in the array
+            int idx = Random.Range(0, jumpSound.Length);
+            myAudioSource.PlayOneShot(jumpSound[idx]);
         }
     }
     
